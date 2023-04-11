@@ -25,7 +25,7 @@ public class TestUtils {
         return path;
     }
 
-    public static String saveMagniImageToFolder(MagniImage image, String folder, String name) {
+    public static String saveMagniImageWithName(MagniImage image, String folder, String name) {
         System.out.println("Saving image " + folder + "/" + name + ".png");
         if (new File(buildPath(OUT_PATH, folder)).mkdir())
             System.out.println("Folder " + folder + " has been created");
@@ -38,9 +38,9 @@ public class TestUtils {
         return path;
     }
 
-    public static String saveNormMagniImage(MagniImage image, String folder) {
+    public static String saveMagniImage(MagniImage image, String folder) {
         String name = image.getName() != null ? image.getName() : String.valueOf(new Date().getTime());
-        return saveMagniImageToFolder(image.dynamicNorm(), folder, name);
+        return saveMagniImageWithName(image.dynamicNorm(), folder, name);
     }
 
     public static String buildPath(String... strings) {

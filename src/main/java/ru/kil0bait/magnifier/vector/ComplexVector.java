@@ -43,12 +43,4 @@ public class ComplexVector {
     public static ComplexVector zero() {
         return new ComplexVector(0, 0);
     }
-
-    public ComplexNumber getN1() {
-        return n1;
-    }
-
-    public ComplexNumber getN2() {
-        return n2;
-    }
 }

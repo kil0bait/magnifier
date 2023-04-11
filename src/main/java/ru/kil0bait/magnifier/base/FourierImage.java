@@ -1,44 +1,37 @@
 package ru.kil0bait.magnifier.base;
 
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
 public class FourierImage {
-
-    private final int width;
     private final ComplexNumber[][] pixels;
+    private final int height;
+    private final int width;
 
     public FourierImage(MagniImage image) {
-        if (image.getWidth() != image.getHeight())
-            throw new MagniException("Bad resolution of image : width not equals height");
+        height = image.getHeight();
         width = image.getWidth();
-        pixels = new ComplexNumber[width][width];
-        for (int y = 0; y < width; y++)
+        pixels = new ComplexNumber[height][width];
+        for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
                 pixels[y][x] = new ComplexNumber(image.pixel(y, x).getIntensity(), 0);
     }
 
     public FourierImage(ComplexNumber[][] pixels) {
-        width = pixels.length;
-        for (int y = 0; y < pixels.length; y++)
-            if (pixels[y].length != width)
-                throw new MagniException("Bad resolution of image : width not equals height");
         this.pixels = pixels;
+        this.height = pixels.length;
+        this.width = pixels[0].length;
     }
 
     public FourierImage dftSlowForward() {
-        int N = width;
-        ComplexNumber[][] res = new ComplexNumber[N][N];
-        ComplexNumber[] omegas = omegasArrayForward(N);
-        for (int k1 = 0; k1 < N; k1++) {
-            for (int k2 = 0; k2 < N; k2++) {
+        ComplexNumber[][] res = new ComplexNumber[height][width];
+        int centerY = this.height / 2;
+        int centerX = this.width / 2;
+        for (int k1 = 0; k1 < height; k1++) {
+            for (int k2 = 0; k2 < width; k2++) {
                 ComplexNumber temp = ComplexNumber.zero();
-                for (int n1 = 0; n1 < N; n1++)
-                    for (int n2 = 0; n2 < N; n2++)
-                        temp.sumHere(omegas[k1 * n1 + k2 * n2].mul(pixels[n1][n2]));
+                for (int n1 = 0; n1 < height; n1++)
+                    for (int n2 = 0; n2 < width; n2++)
+                        temp.sumHere(omegaForward(height, (centerY - k1) * (centerY - n1))
+                                .mul(omegaForward(width, (k2 - centerX) * (n2 - centerX)))
+                                .mul(pixels[n1][n2]));
                 res[k1][k2] = new ComplexNumber(temp);
             }
         }
@@ -46,64 +39,45 @@ public class FourierImage {
     }
 
     public FourierImage dftSlowInverse() {
-        int N = width;
-        ComplexNumber[][] res = new ComplexNumber[N][N];
-        ComplexNumber[] omegas = omegasArrayInverse(N);
-        for (int k1 = 0; k1 < N; k1++) {
-            for (int k2 = 0; k2 < N; k2++) {
+        ComplexNumber[][] res = new ComplexNumber[height][width];
+        int centerY = this.height / 2;
+        int centerX = this.width / 2;
+        for (int k1 = 0; k1 < height; k1++) {
+            for (int k2 = 0; k2 < width; k2++) {
                 ComplexNumber temp = ComplexNumber.zero();
-                for (int n1 = 0; n1 < N; n1++)
-                    for (int n2 = 0; n2 < N; n2++) {
-                        temp.sumHere(omegas[k1 * n1 + k2 * n2].mul(pixels[n1][n2]));
-                    }
-                temp.divByNumberHere(N * N);
-                res[k1][k2] = new ComplexNumber(temp);
-            }
-        }
-        return new FourierImage(res);
-    }
-
-    public FourierImage dftSlowInverseWithCenter() {
-        int N = width;
-        ComplexNumber[][] res = new ComplexNumber[N][N];
-        int center = width / 2;
-        for (int k1 = 0; k1 < N; k1++) {
-            System.out.println(k1);
-            for (int k2 = 0; k2 < N; k2++) {
-                ComplexNumber temp = ComplexNumber.zero();
-                for (int n1 = 0; n1 < N; n1++)
-                    for (int n2 = 0; n2 < N; n2++)
-                        temp.sumHere(omegaInverseApril(N, (center - k1) * (center - n1) + (k2 - center) * (n2 - center)).mul(pixels[n1][n2]));
-                temp.divByNumberHere(N * N);
-                res[k1][k2] = new ComplexNumber(temp);
+                for (int n1 = 0; n1 < height; n1++)
+                    for (int n2 = 0; n2 < width; n2++)
+                        temp.sumHere(omegaInverse(height, (centerY - k1) * (centerY - n1))
+                                .mul(omegaInverse(width, (k2 - centerX) * (n2 - centerX)))
+                                .mul(pixels[n1][n2]));
+                res[k1][k2] = temp.divByNumberHere(height * width);
             }
         }
         return new FourierImage(res);
     }
 
     public FourierImage fftCooleyForward() {
-        if (!isPowerOfTwo(width))
-            throw new MagniException("Bad resolution of image for Cooley FFT");
-        return new FourierImage(fftCooleyForwardRecursion(width, 1, 0, 0));
+        MagniException.validateResolutionIsPowerOfTwo(height, width);
+        return new FourierImage(fftCooleyForwardRecursion(height, 1, 0, 0));
     }
 
     public FourierImage fftCooleyInverse() {
-        if (!isPowerOfTwo(width))
-            throw new MagniException("Bad resolution of image for Cooley FFT");
-        ComplexNumber[][] res = fftCooleyInverseRecursion(width, 1, 0, 0);
-        int sqrN = width * width;
-        for (int y = 0; y < width; y++)
-            for (int x = 0; x < width; x++)
+        MagniException.validateResolutionIsPowerOfTwo(height, width);
+        ComplexNumber[][] res = fftCooleyInverseRecursion(height, 1, 0, 0);
+        int sqrN = height * height;
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < height; x++)
                 res[y][x].divByNumberHere(sqrN);
         return new FourierImage(res);
     }
 
     public FourierImage shiftApril() {
-        ComplexNumber[][] res = new ComplexNumber[width][width];
-        int center = width / 2;
-        for (int y = 0; y < width; y++) {
+        ComplexNumber[][] res = new ComplexNumber[height][width];
+        int centerY = height / 2;
+        int centerX = width / 2;
+        for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                res[y][x] = pixels[(y - center + width) % width][(x - center + width) % width];
+                res[y][x] = pixels[(y - centerY + height) % height][(x - centerX + width) % width];
             }
         }
         return new FourierImage(res);
@@ -199,83 +173,44 @@ public class FourierImage {
         }
     }
 
-    public MagniImage magnitude() {
-        MagniPixel[][] resPixels = new MagniPixel[width][width];
-        for (int y = 0; y < width; y++)
+    public MagniImage spectrumFourier() {
+        MagniPixel[][] resPixels = new MagniPixel[height][width];
+        for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
                 resPixels[y][x] = new MagniPixel(pixels[y][x].length());
-        MagniImage res = new MagniImage(resPixels);
-        return res.dynamicNormAverage();
+        return new MagniImage(resPixels);
     }
 
-    public MagniImage getImageFromRe() {
-        MagniPixel[][] res = new MagniPixel[width][width];
-        for (int y = 0; y < width; y++)
+    public MagniImage imageFromRe() {
+        MagniPixel[][] res = new MagniPixel[height][width];
+        for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
-                res[y][x] = new MagniPixel(pixels[y][x].getRe());
+                res[y][x] = new MagniPixel(pixels[y][x].re);
         return new MagniImage(res);
     }
 
-    public MagniImage getImageFromIm() {
-        MagniPixel[][] res = new MagniPixel[width][width];
-        for (int y = 0; y < width; y++)
+    public MagniImage imageFromIm() {
+        MagniPixel[][] res = new MagniPixel[height][width];
+        for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
-                res[y][x] = new MagniPixel(pixels[y][x].getIm());
+                res[y][x] = new MagniPixel(pixels[y][x].im);
         return new MagniImage(res);
     }
 
-    public MagniImage getImageFromLength() {
-        MagniPixel[][] res = new MagniPixel[width][width];
-        for (int y = 0; y < width; y++)
-            for (int x = 0; x < width; x++)
-                res[y][x] = new MagniPixel(pixels[y][x].length());
-        return new MagniImage(res);
+    private static ComplexNumber omegaForward(int N, int pow) {
+        double x = -2 * Math.PI * pow / N;
+        return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
-    public ComplexNumber[][] getPixels() {
-        return pixels;
-    }
-
-    public static ComplexNumber[] omegasArrayForward(int N) {
-        ComplexNumber[] res = new ComplexNumber[2 * N * N];
-        for (int i = 0; i < res.length; i++)
-            res[i] = omegaForward(N, i);
-        return res;
-    }
-
-    public static ComplexNumber[] omegasArrayInverse(int N) {
-        ComplexNumber[] res = new ComplexNumber[2 * N * N];
-        for (int i = 0; i < res.length; i++)
-            res[i] = omegaInverse(N, i);
-        return res;
-    }
-
-    public static ComplexNumber omegaForward(int N, int pow) {
-        double re, im;
-        re = Math.cos(2 * pow * Math.PI / N);
-        im = Math.sin(-2 * pow * Math.PI / N);
-        return new ComplexNumber(re, im);
-    }
-
-    public static ComplexNumber omegaInverse(int N, int pow) {
-        double re, im;
-        re = Math.cos(2 * pow * Math.PI / N);
-        im = Math.sin(2 * pow * Math.PI / N);
-        return new ComplexNumber(re, im);
-    }
-
-    public static ComplexNumber omegaInverseApril(int N, int pow) {
+    private static ComplexNumber omegaInverse(int N, int pow) {
         double x = 2 * Math.PI * pow / N;
         return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
-    public static boolean isPowerOfTwo(int N) {
-        return N != 0 && ((N & (N - 1)) == 0);
-    }
-
-    public String rawValues() {
+    public String toStringRawValues() {
         StringBuilder builder = new StringBuilder();
-        for (int y = 0; y < width; y++) {
+        builder.append(String.format("--Image resolution [%dx%d]--\r\n", height, width));
+        for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
                 builder.append(complexToString(pixels[y][x]));
             builder.append("\r\n");
@@ -283,21 +218,22 @@ public class FourierImage {
         return builder.toString();
     }
 
-    public void saveToFile(File file) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-        writer.write(String.format("--Image resolution [%dx%d]--\r\n", width, width));
-        writer.write("--Real part--\r\n");
-        for (int y = 0; y < width; y++) {
+    public static FourierImage fromStringRawValues(String s) {
+        String[] split = s.replaceAll("\r", "").split("\n");
+        String[] temp = split[0].substring(split[0].indexOf("[") + 1, split[0].indexOf("]")).split("x");
+        int height = Integer.parseInt(temp[0]);
+        int width = Integer.parseInt(temp[1]);
+        ComplexNumber[][] resPixels = new ComplexNumber[height][width];
+        for (int y = 0; y < height; y++) {
+            temp = split[y + 1].split(SPACES);
             for (int x = 0; x < width; x++)
-                writer.write(complexToString(pixels[y][x]));
-            writer.newLine();
+                resPixels[y][x] = new ComplexNumber(ComplexNumber.parseComplex(temp[x]));
         }
-        writer.close();
+        return new FourierImage(resPixels);
     }
 
-    private static final String NUMBER_FORMAT = "%.6f";
-    private static final String SPACES = "\\s+";
     private static final int CELL_WIDTH = 64;
+    private static final String SPACES = "\\s+";
 
     public static String complexToString(ComplexNumber g) {
         String res = g.toString();

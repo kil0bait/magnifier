@@ -6,11 +6,9 @@ import io.jhdf.api.Group;
 import io.jhdf.api.Node;
 import ru.kil0bait.magnifier.vector.ComplexVectorImage;
 import ru.kil0bait.magnifier.base.FourierImage;
-import ru.kil0bait.magnifier.pair.FourierPair;
 import ru.kil0bait.magnifier.base.MagniImage;
 import ru.kil0bait.magnifier.base.MagniPixel;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static ru.kil0bait.magnifier.TestUtils.*;
-import static ru.kil0bait.magnifier.TestUtils.saveMagniImageToFolder;
 
 public class VectorApproach {
     public static final Pattern VELOX_META_PATTERN = Pattern.compile("\"label\": \"([^\"]*)\".*\"dataPath\": \"([^\"]*)\"", Pattern.DOTALL);
@@ -29,8 +26,8 @@ public class VectorApproach {
 
     public static void main(String[] args) throws IOException {
         String folder = "aprilStage";
-        MagniImage[] images = getImagesFromPath(folder, DET_SEQ2);
-//        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ2);
+//        MagniImage[] images = getImagesFromPath(folder, DET_SEQ2);
+        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ);
         idpc(images, folder);
     }
 
@@ -38,30 +35,30 @@ public class VectorApproach {
     private static void idpc(MagniImage[] images, String folder) throws IOException {
         MagniImage imageX = images[0].subtract(images[2]);
         MagniImage imageY = images[1].subtract(images[3]);
-        saveMagniImageToFolder(imageX.dynamicNorm(), folder, "imageX");
-        saveMagniImageToFolder(imageY.dynamicNorm(), folder, "imageY");
+        saveMagniImageWithName(imageX.dynamicNorm(), folder, "imageX");
+        saveMagniImageWithName(imageY.dynamicNorm(), folder, "imageY");
 
         ComplexVectorImage function = new ComplexVectorImage(imageY, imageX);
-        ComplexVectorImage fftForward = function.fftCooleyForwardWithShift();
+        ComplexVectorImage fftForward = function.fftCooleyForward();
 //        ComplexVectorImage fftForward = function.dftSlowForward();
-        fftForward.getImage2().saveToFile(new File("out/" + folder + "/fft_imageX_vector.txt"));
-        MagniImage[] magnitudes = fftForward.magnitude();
+//        fftForward.getImage2().saveToFile(new File("out/" + folder + "/fft_imageX_vector.txt"));
+        MagniImage[] magnitudes = fftForward.spectrumFourier();
 
-        saveMagniImageToFolder(magnitudes[0].dynamicNorm(), folder, "magnitude1");
-        saveMagniImageToFolder(magnitudes[1].dynamicNorm(), folder, "magnitude2");
+        saveMagniImageWithName(magnitudes[0].dynamicNorm(), folder, "magnitude1");
+        saveMagniImageWithName(magnitudes[1].dynamicNorm(), folder, "magnitude2");
 
 //        FourierImage deGradient = fftForward.deGradient();
-        FourierImage deGradient = fftForward.deGradientWithCenter();
+        FourierImage deGradient = fftForward.deGradient();
 //        deGradient.shift();
         FourierImage fourierImage = deGradient
                 .shiftApril()
                 .fftCooleyInverse();
 //                .dftSlowInverseWithCenter();
 
-        MagniImage idpcRe = fourierImage.getImageFromRe().dynamicNorm();
-        saveMagniImageToFolder(idpcRe, folder, "idpc_RE");
-        MagniImage idpcIm = fourierImage.getImageFromIm().dynamicNorm();
-        saveMagniImageToFolder(idpcIm, folder, "idpc_ZIM");
+        MagniImage idpcRe = fourierImage.imageFromRe().dynamicNorm();
+        saveMagniImageWithName(idpcRe, folder, "idpc_RE");
+        MagniImage idpcIm = fourierImage.imageFromIm().dynamicNorm();
+        saveMagniImageWithName(idpcIm, folder, "idpc_ZIM");
     }
 
     public static MagniImage[] getImagesFromVelox(String hdfFilePath, String[] detSeq) {
@@ -125,19 +122,5 @@ public class VectorApproach {
                 new MagniImage(loadImageFromOut(buildPath(folder, detSeq[2] + ext))),
                 new MagniImage(loadImageFromOut(buildPath(folder, detSeq[3] + ext)))
         };
-    }
-
-    private static FourierImage calculateIdpc(MagniImage[] images) {
-        MagniImage imageX = images[0].subtract(images[2]);
-        MagniImage imageY = images[1].subtract(images[3]);
-        FourierPair fourierPair = new FourierPair(imageX, imageY);
-//        fourierPair.shift();
-        fourierPair.fftCooleyForward();
-//        fourierPair.shift();
-        FourierImage deGradient = fourierPair.deGradientApril();
-//        deGradient.shift();
-        deGradient = deGradient.fftCooleyInverse();
-//        deGradient.shift();
-        return deGradient;
     }
 }

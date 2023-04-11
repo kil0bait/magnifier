@@ -3,8 +3,8 @@ package ru.kil0bait.magnifier.base;
 import java.util.Objects;
 
 public class ComplexNumber {
-    private double re;
-    private double im;
+    protected double re;
+    protected double im;
 
     public ComplexNumber(double re, double im) {
         this.re = re;
@@ -17,14 +17,6 @@ public class ComplexNumber {
     }
 
     private ComplexNumber() {
-    }
-
-    public double getRe() {
-        return re;
-    }
-
-    public double getIm() {
-        return im;
     }
 
     public double norm() {
@@ -47,22 +39,24 @@ public class ComplexNumber {
     }
 
     public ComplexNumber sumHere(ComplexNumber that) {
-        this.re = this.re + that.re;
-        this.im = this.im + that.im;
+        this.re += that.re;
+        this.im += that.im;
         return this;
     }
 
     public ComplexNumber subHere(ComplexNumber that) {
-        this.re = this.re - that.re;
-        this.im = this.im - that.im;
+        this.re -= that.re;
+        this.im -= that.im;
         return this;
     }
+
     public ComplexNumber mul(ComplexNumber that) {
         ComplexNumber res = new ComplexNumber();
         res.re = this.re * that.re - this.im * that.im;
         res.im = this.re * that.im + this.im * that.re;
         return res;
     }
+
     public ComplexNumber div(ComplexNumber that) {
         return this.mul(that.conjugate()).divByNumber(that.norm());
     }
@@ -75,10 +69,6 @@ public class ComplexNumber {
         this.re /= div;
         this.im /= div;
         return this;
-    }
-
-    public ComplexNumber mulByNumber(double mul) {
-        return new ComplexNumber(re * mul, im * mul);
     }
 
     public boolean equals(Object o) {
@@ -110,18 +100,11 @@ public class ComplexNumber {
     }
 
     public static ComplexNumber zero() {
-        return new ComplexNumber(0,0);
-    }
-    public static ComplexNumber imaginaryUnit() {
-        return new ComplexNumber(0,1);
+        return new ComplexNumber(0, 0);
     }
 
     public static String numberFormat(double d) {
         return String.valueOf(d);
-    }
-
-    public String toWolframString() {
-        return "(" + this + ")";
     }
 
     public static ComplexNumber parseComplex(String stringElem) {

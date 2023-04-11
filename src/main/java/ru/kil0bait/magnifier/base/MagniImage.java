@@ -2,25 +2,23 @@ package ru.kil0bait.magnifier.base;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
-import java.io.*;
 import java.util.Locale;
 
 public class MagniImage {
-    private final int width;
-    private final int height;
-    //pixels [y][x]
     private final MagniPixel[][] pixels;
+    private final int height;
+    private final int width;
     private String name;
 
     public MagniImage(MagniPixel[][] pixels) {
-        this.width = pixels.length;
-        this.height = pixels[0].length;
+        this.height = pixels.length;
+        this.width = pixels[0].length;
         this.pixels = pixels;
     }
 
     public MagniImage(BufferedImage bufferedImage) {
-        width = bufferedImage.getWidth();
         height = bufferedImage.getHeight();
+        width = bufferedImage.getWidth();
         pixels = new MagniPixel[height][width];
         if (bufferedImage.getColorModel().getColorSpace().equals(ColorSpace.getInstance(ColorSpace.CS_GRAY)))
             for (int y = 0; y < height; y++)
@@ -33,8 +31,8 @@ public class MagniImage {
     }
 
     public MagniImage(MagniImage that) {
-        this.width = that.width;
         this.height = that.height;
+        this.width = that.width;
         this.name = that.name;
         this.pixels = new MagniPixel[height][width];
         for (int y = 0; y < height; y++)
@@ -110,14 +108,6 @@ public class MagniImage {
         return new MagniImage(res);
     }
 
-    public double averageIntensity() {
-        double average = 0;
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
-                average += pixels[y][x].getIntensity();
-        return average / (width * height);
-    }
-
     public BufferedImage toBufferedImage() {
         BufferedImage res = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < height; y++)
@@ -130,7 +120,7 @@ public class MagniImage {
         BufferedImage res = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
-                res.setRGB(x, y, pixel(y, x).getRGBInt());
+                res.setRGB(x, y, pixels[y][x].getRGBInt());
         return res;
     }
 
@@ -152,16 +142,16 @@ public class MagniImage {
 
     public static void checkImagesResolutions(MagniImage image1, MagniImage image2) {
         if (image1.width != image2.width || image1.height != image2.height)
-            throw new MagniException("Images resolutions do not equal");
+            throw new MagniException("Images resolutions are not equal");
     }
 
-    public static void checkImageWidthEqualsHeight(MagniImage image) {
-        if (image.width != image.height)
-            throw new MagniException("Image width not equals height");
-    }
+    private static final int CELL_WIDTH = 24;
+    private static final String SPACES = "\\s+";
+    private static final String NUMBER_FORMAT = "%.6f";
 
-    public String rawValues() {
+    public String toStringRawValues() {
         StringBuilder builder = new StringBuilder();
+        builder.append(String.format("--Image resolution [%dx%d]--\r\n", height, width));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
                 builder.append(numberToString(pixels[y][x].getIntensity()));
@@ -170,38 +160,19 @@ public class MagniImage {
         return builder.toString();
     }
 
-    public void saveToFile(File file) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-        writer.write(String.format("--Image resolution [%dx%d]--\r\n", width, width));
-        writer.write("--Real part--\r\n");
+    public static MagniImage fromStringRawValues(String s) {
+        String[] split = s.replaceAll("\r", "").split("\n");
+        String[] temp = split[0].substring(split[0].indexOf("[") + 1, split[0].indexOf("]")).split("x");
+        int height = Integer.parseInt(temp[0]);
+        int width = Integer.parseInt(temp[1]);
+        MagniPixel[][] resPixels = new MagniPixel[height][width];
         for (int y = 0; y < height; y++) {
+            temp = split[y + 1].split(SPACES);
             for (int x = 0; x < width; x++)
-                writer.write(numberToString(pixels[y][x].getIntensity()));
-            writer.newLine();
-        }
-        writer.close();
-    }
-
-    public static MagniImage fromFile(File file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        int width;
-        String temp = reader.readLine();
-        width = Integer.parseInt(temp.substring(temp.indexOf("[") + 1, temp.indexOf("x")));
-        reader.readLine();
-        MagniPixel[][] resPixels = new MagniPixel[width][width];
-        for (int y = 0; y < width; y++) {
-            temp = reader.readLine();
-            String[] tempArray = temp.split(SPACES);
-            System.out.println(temp);
-            for (int x = 0; x < width; x++)
-                resPixels[y][x] = new MagniPixel(Double.parseDouble(tempArray[x]));
+                resPixels[y][x] = new MagniPixel(Double.parseDouble(temp[x]));
         }
         return new MagniImage(resPixels);
     }
-
-    private static final String NUMBER_FORMAT = "%.6f";
-    private static final String SPACES = "\\s+";
-    private static final int CELL_WIDTH = 24;
 
     public static String numberToString(double n) {
         String res = String.format(Locale.US, NUMBER_FORMAT, n);

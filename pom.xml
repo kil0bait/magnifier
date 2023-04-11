@@ -21,14 +21,10 @@
             <version>0.6.9</version>
         </dependency>
         <dependency>
-            <groupId>org.boofcv</groupId>
-            <artifactId>boofcv-core</artifactId>
-            <version>0.41</version>
-        </dependency>
-        <dependency>
-            <groupId>org.boofcv</groupId>
-            <artifactId>boofcv-swing</artifactId>
-            <version>0.41</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
