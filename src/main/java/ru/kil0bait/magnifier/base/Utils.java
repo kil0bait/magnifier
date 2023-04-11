@@ -1,4 +1,4 @@
-package ru.kil0bait.magnifier.classes;
+package ru.kil0bait.magnifier.base;
 
 import java.util.Random;
 

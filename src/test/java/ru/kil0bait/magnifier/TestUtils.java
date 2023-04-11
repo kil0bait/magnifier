@@ -1,7 +1,7 @@
 package ru.kil0bait.magnifier;
 
-import ru.kil0bait.magnifier.classes.MagniImage;
-import ru.kil0bait.magnifier.classes.MagniException;
+import ru.kil0bait.magnifier.base.MagniImage;
+import ru.kil0bait.magnifier.base.MagniException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

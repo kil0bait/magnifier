@@ -1,10 +1,10 @@
-package ru.kil0bait.magnifier.april;
+package ru.kil0bait.magnifier.vector;
 
-import ru.kil0bait.magnifier.classes.ComplexNumber;
+import ru.kil0bait.magnifier.base.ComplexNumber;
 
 public class ComplexVector {
-    private final ComplexNumber n1;
-    private final ComplexNumber n2;
+    protected final ComplexNumber n1;
+    protected final ComplexNumber n2;
 
     public ComplexVector(ComplexNumber n1, ComplexNumber n2) {
         this.n1 = new ComplexNumber(n1);
@@ -23,24 +23,10 @@ public class ComplexVector {
         );
     }
 
-    public ComplexVector sum(ComplexVector that) {
-        return new ComplexVector(
-                this.n1.sum(that.n1),
-                this.n2.sum(that.n2)
-        );
-    }
-
     public ComplexVector sumHere(ComplexVector that) {
         this.n1.sumHere(that.n1);
         this.n2.sumHere(that.n2);
         return this;
-    }
-
-    public ComplexVector sub(ComplexVector that) {
-        return new ComplexVector(
-                this.n1.sub(that.n1),
-                this.n2.sub(that.n2)
-        );
     }
 
     public ComplexVector subHere(ComplexVector that) {
@@ -56,16 +42,6 @@ public class ComplexVector {
 
     public static ComplexVector zero() {
         return new ComplexVector(0, 0);
-    }
-
-    public void divByNumberHere(double div) {
-        this.n1.divByNumberHere(div);
-        this.n2.divByNumberHere(div);
-    }
-
-    public void mulByNumberHere(double mul) {
-        this.n1.mulByNumberHere(mul);
-        this.n2.mulByNumberHere(mul);
     }
 
     public ComplexNumber getN1() {

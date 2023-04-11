@@ -1,4 +1,4 @@
-package ru.kil0bait.magnifier.classes;
+package ru.kil0bait.magnifier.base;
 
 import java.util.Objects;
 
@@ -27,14 +27,6 @@ public class ComplexNumber {
         return im;
     }
 
-    public void setRe(double re) {
-        this.re = re;
-    }
-
-    public void setIm(double im) {
-        this.im = im;
-    }
-
     public double norm() {
         return re * re + im * im;
     }
@@ -54,13 +46,6 @@ public class ComplexNumber {
         return res;
     }
 
-    public ComplexNumber sub(ComplexNumber that) {
-        ComplexNumber res = new ComplexNumber();
-        res.re = this.re - that.re;
-        res.im = this.im - that.im;
-        return res;
-    }
-
     public ComplexNumber sumHere(ComplexNumber that) {
         this.re = this.re + that.re;
         this.im = this.im + that.im;
@@ -72,54 +57,14 @@ public class ComplexNumber {
         this.im = this.im - that.im;
         return this;
     }
-
-    public ComplexNumber sumHere(ComplexNumber that, ComplexNumber multiplier) {
-        return sumHere(that.mul(multiplier));
-    }
-
-    public ComplexNumber subHere(ComplexNumber that, ComplexNumber multiplier) {
-        return subHere(that.mul(multiplier));
-    }
-
     public ComplexNumber mul(ComplexNumber that) {
         ComplexNumber res = new ComplexNumber();
         res.re = this.re * that.re - this.im * that.im;
         res.im = this.re * that.im + this.im * that.re;
         return res;
     }
-
-    public ComplexNumber mulHere(ComplexNumber that) {
-        this.re = this.re * that.re - this.im * that.im;
-        this.im = this.re * that.im + this.im * that.re;
-        return this;
-    }
-
     public ComplexNumber div(ComplexNumber that) {
         return this.mul(that.conjugate()).divByNumber(that.norm());
-    }
-
-    public ComplexNumber pow(int degree) {
-        if (degree == 0)
-            return positiveUnit();
-        ComplexNumber res = new ComplexNumber(this);
-        for (double i = 0; i < degree - 1; i++)
-            res = res.mul(this);
-        return res;
-    }
-
-    public ComplexNumber absolute() {
-        if (re > 0)
-            return new ComplexNumber(this);
-        else if (re < 0)
-            return this.negative();
-        else if (im >= 0)
-            return this.mul(imaginaryUnit());
-        else
-            return this.negative().mul(imaginaryUnit());
-    }
-
-    public ComplexNumber negative() {
-        return new ComplexNumber(-re, -im);
     }
 
     public ComplexNumber divByNumber(double div) {
@@ -134,12 +79,6 @@ public class ComplexNumber {
 
     public ComplexNumber mulByNumber(double mul) {
         return new ComplexNumber(re * mul, im * mul);
-    }
-
-    public ComplexNumber mulByNumberHere(double mul) {
-        this.re *= mul;
-        this.im *= mul;
-        return this;
     }
 
     public boolean equals(Object o) {
@@ -176,9 +115,6 @@ public class ComplexNumber {
     public static ComplexNumber imaginaryUnit() {
         return new ComplexNumber(0,1);
     }
-    public static ComplexNumber positiveUnit() {
-        return new ComplexNumber(1,0);
-    }
 
     public static String numberFormat(double d) {
         return String.valueOf(d);
@@ -188,7 +124,7 @@ public class ComplexNumber {
         return "(" + this + ")";
     }
 
-    public static ComplexNumber parseGauss(String stringElem) {
+    public static ComplexNumber parseComplex(String stringElem) {
         String s = stringElem;
         if (!s.contains("i")) {
             s += "+0i";

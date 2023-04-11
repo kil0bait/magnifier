@@ -1,4 +1,4 @@
-package ru.kil0bait.magnifier.classes;
+package ru.kil0bait.magnifier.base;
 
 import java.awt.*;
 
@@ -18,16 +18,12 @@ public class MagniPixel {
         return new MagniPixel(this.intensity - that.intensity);
     }
 
-    public MagniPixel sumIntensity(MagniPixel that) {
-        return new MagniPixel(this.intensity + that.intensity);
-    }
-
-    public MagniPixel mulByNumber(double n) {
-        return new MagniPixel(this.intensity * n);
+    public MagniPixel subtractIntensityWithMultiplier(MagniPixel that) {
+        return new MagniPixel(getSubtractMultiplier() * (this.intensity - that.intensity));
     }
 
     public static double getSubtractMultiplier() {
-        return Math.PI / Math.pow(2, 1.5F);
+        return (3.55 * Math.pow(10, -9)) * Math.PI / Math.pow(2, 1.5F);
     }
 
     public static MagniPixel fromRGBColor(int rgbColor) {

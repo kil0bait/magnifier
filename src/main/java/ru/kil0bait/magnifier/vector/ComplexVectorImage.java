@@ -1,6 +1,6 @@
-package ru.kil0bait.magnifier.april;
+package ru.kil0bait.magnifier.vector;
 
-import ru.kil0bait.magnifier.classes.*;
+import ru.kil0bait.magnifier.base.*;
 
 public class ComplexVectorImage {
     private final ComplexVector[][] pixels;
@@ -40,15 +40,6 @@ public class ComplexVectorImage {
 
     public ComplexVectorImage fftCooleyForward() {
         return new ComplexVectorImage(fftCooleyForwardRecursion(width, 1, 0, 0));
-    }
-
-    public ComplexVectorImage fftCooleyInverse() {
-        ComplexVector[][] res = fftCooleyInverseRecursion(width, 1, 0, 0);
-        int sqrN = width * width;
-        for (int y = 0; y < width; y++)
-            for (int x = 0; x < width; x++)
-                res[y][x].divByNumberHere(sqrN);
-        return new ComplexVectorImage(res);
     }
 
     public ComplexVector[][] fftCooleyForwardRecursion(int N, int delta, int shift1, int shift2) {
@@ -100,14 +91,14 @@ public class ComplexVectorImage {
         int N = width;
         ComplexVector[][] res = new ComplexVector[N][N];
         int center = width / 2;
-        for (int y = 0; y < N; y++) {
-            System.out.println(y);
-            for (int x = 0; x < N; x++) {
+        for (int k1 = 0; k1 < N; k1++) {
+            System.out.println(k1);
+            for (int k2 = 0; k2 < N; k2++) {
                 ComplexVector temp = ComplexVector.zero();
-                for (int nY = 0; nY < N; nY++)
-                    for (int nX = 0; nX < N; nX++)
-                        temp.sumHere(pixels[nY][nX].mul(omegaForward(N, (center - y) * (center - nY) + (x - center) * (nX - center))));
-                res[y][x] = temp;
+                for (int n1 = 0; n1 < N; n1++)
+                    for (int n2 = 0; n2 < N; n2++)
+                        temp.sumHere(pixels[n1][n2].mul(omegaForwardApril(N, (center - k1) * (center - n1) + (k2 - center) * (n2 - center))));
+                res[k1][k2] = temp;
             }
         }
         return new ComplexVectorImage(res);
@@ -165,51 +156,35 @@ public class ComplexVectorImage {
         return new ComplexNumber(re, im);
     }
 
+    public static ComplexNumber omegaForwardApril(int N, int pow) {
+        double x = -2 * Math.PI * pow / N;
+        return new ComplexNumber(Math.cos(x), Math.sin(x));
+    }
+
     public static ComplexNumber omegaInverse(int N, int pow) {
         double re, im;
         re = Math.cos(2 * pow * Math.PI / N);
         im = Math.sin(2 * pow * Math.PI / N);
-        return new ComplexNumber(re,  im);
-    }
-
-
-    public FourierImage deGradient() {
-        int N = width;
-        ComplexNumber[][] res = new ComplexNumber[N][N];
-        ComplexNumber twoPiImUnit = ComplexNumber.imaginaryUnit().mul(new ComplexNumber( Math.PI * 2, 0));
-        for (int ky = 0; ky < N; ky++) {
-            for (int kx = 0; kx < N; kx++) {
-                if (ky == 0 || kx == 0) {
-                    res[ky][kx] = new ComplexNumber(0, 0);
-                    continue;
-                }
-                ComplexNumber temp = new ComplexVector(ky, kx).scalarMul(pixels[ky][kx])
-                        .div(twoPiImUnit)
-                        .divByNumber(kx * kx + ky * ky);
-                res[ky][kx] = new ComplexNumber(temp);
-            }
-        }
-        return new FourierImage(res);
+        return new ComplexNumber(re, im);
     }
 
     public FourierImage deGradientWithCenter() {
         int N = width;
         int center = width / 2;
         ComplexNumber[][] res = new ComplexNumber[N][N];
-        ComplexNumber twoPiImUnit = ComplexNumber.imaginaryUnit().mul(new ComplexNumber( Math.PI * 2, 0));
+        ComplexNumber twoPiImUnit = new ComplexNumber(0, 2 * Math.PI);
         for (int y = 0; y < N; y++) {
             for (int x = 0; x < N; x++) {
-                float ky = center - y;
-                float kx = x - center;
-                if (ky == 0 || kx == 0) {
+                double ky = center - y;
+                double kx = x - center;
+                if (ky == 0 && kx == 0) {
                     res[y][x] = new ComplexNumber(0, 0);
                     continue;
                 }
                 ComplexNumber temp = pixels[y][x].scalarMul(new ComplexVector(ky, kx))
-//                ComplexNumber temp = new ComplexVector(ky, kx).scalarMul(pixels[x][y])
+//                ComplexNumber temp = new ComplexVector(y, x).scalarMul(pixels[x][y])
                         .div(twoPiImUnit)
-                        .divByNumber(ky * ky + kx * kx)
-                        ;
+                        .divByNumber(ky * ky + kx * kx);
                 res[y][x] = new ComplexNumber(temp);
             }
         }
@@ -222,14 +197,13 @@ public class ComplexVectorImage {
         MagniPixel[][] resPixels2 = new MagniPixel[width][width];
         for (int y = 0; y < width; y++)
             for (int x = 0; x < width; x++) {
-                resPixels1[y][x] = new MagniPixel(pixels[y][x].getN1().length());
-                resPixels2[y][x] = new MagniPixel(pixels[y][x].getN2().length());
+                resPixels1[y][x] = new MagniPixel(pixels[y][x].n1.length());
+                resPixels2[y][x] = new MagniPixel(pixels[y][x].n2.length());
             }
         res[0] = new MagniImage(resPixels1);
         res[1] = new MagniImage(resPixels2);
         return res;
     }
-
 
     public static ComplexNumber[] omegasArrayForward(int N) {
         ComplexNumber[] res = new ComplexNumber[2 * N * N];
@@ -238,10 +212,19 @@ public class ComplexVectorImage {
         return res;
     }
 
-    public void shift() {
+    public FourierImage getImage1() {
+        ComplexNumber[][] res = new ComplexNumber[width][width];
         for (int y = 0; y < width; y++)
             for (int x = 0; x < width; x++)
-                if ((x + y) % 2 != 0)
-                    pixels[y][x].mulByNumberHere(-1);
+                res[y][x] = pixels[y][x].n1;
+        return new FourierImage(res);
+    }
+
+    public FourierImage getImage2() {
+        ComplexNumber[][] res = new ComplexNumber[width][width];
+        for (int y = 0; y < width; y++)
+            for (int x = 0; x < width; x++)
+                res[y][x] = pixels[y][x].n2;
+        return new FourierImage(res);
     }
 }

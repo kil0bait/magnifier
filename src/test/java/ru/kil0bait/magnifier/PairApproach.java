@@ -4,12 +4,12 @@ import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
 import io.jhdf.api.Node;
-import ru.kil0bait.magnifier.april.ComplexVectorImage;
-import ru.kil0bait.magnifier.classes.FourierImage;
-import ru.kil0bait.magnifier.classes.FourierPair;
-import ru.kil0bait.magnifier.classes.MagniImage;
-import ru.kil0bait.magnifier.classes.MagniPixel;
+import ru.kil0bait.magnifier.base.FourierImage;
+import ru.kil0bait.magnifier.pair.FourierPair;
+import ru.kil0bait.magnifier.base.MagniImage;
+import ru.kil0bait.magnifier.base.MagniPixel;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,15 +21,15 @@ import java.util.regex.Pattern;
 import static ru.kil0bait.magnifier.TestUtils.*;
 import static ru.kil0bait.magnifier.TestUtils.saveMagniImageToFolder;
 
-public class AprilNew {
+public class PairApproach {
     public static final Pattern VELOX_META_PATTERN = Pattern.compile("\"label\": \"([^\"]*)\".*\"dataPath\": \"([^\"]*)\"", Pattern.DOTALL);
     public static final String[] DET_SEQ = {"DF4-A", "DF4-B", "DF4-C", "DF4-D"};
-    public static final String[] DET_SEQ2 = {"DF4-A", "DF4-D", "DF4-C", "DF4-B"};
+    public static final String[] DET_SEQ2 = {"DF4-A", "DF4-B", "DF4-C", "DF4-D"};
 
     public static void main(String[] args) throws IOException {
         String folder = "aprilStage";
-//        MagniImage[] images = getImagesFromPath(folder, DET_SEQ2);
-        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ2);
+        MagniImage[] images = getImagesFromPath(folder, DET_SEQ2);
+//        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ2);
         idpc(images, folder);
     }
 
@@ -38,34 +38,23 @@ public class AprilNew {
         MagniImage imageY = images[1].subtract(images[3]);
         saveMagniImageToFolder(imageX.dynamicNorm(), folder, "imageX");
         saveMagniImageToFolder(imageY.dynamicNorm(), folder, "imageY");
-        ComplexVectorImage function = new ComplexVectorImage(imageY, imageX);
-        ComplexVectorImage fftForward = function.fftCooleyForwardWithShift();
-//        fftForward.shift();
 
-//        ComplexVectorImage fftForward = function.dftSlowForward();
-        MagniImage[] magnitudes = fftForward.magnitude();
-        saveMagniImageToFolder(magnitudes[0].dynamicNorm(), folder, "magnitude1");
-        saveMagniImageToFolder(magnitudes[1].dynamicNorm(), folder, "magnitude2");
+        FourierPair fourierPair = new FourierPair(imageX, imageY);
+        fourierPair.fftCooleyForward();
+        fourierPair.getImageX().saveToFile(new File("out/" + folder + "/fft_imageX_pair.txt"));
+        fourierPair.shiftApril();
+        fourierPair.getImageX().saveToFile(new File("out/" + folder + "/fft_imageX_pair_shifted.txt"));
 
-//        FourierImage deGradient = fftForward.deGradient();
-        FourierImage deGradient = fftForward.deGradientWithCenter();
-//        deGradient.shift();
-        FourierImage fourierImage = deGradient
-                .shiftApril()
-                .fftCooleyInverse();
-//                .dftSlowInverseWithCenter();
+        saveMagniImageToFolder(fourierPair.getImageX().magnitude().dynamicNorm(), folder, "magnitudeX");
+        saveMagniImageToFolder(fourierPair.getImageY().magnitude().dynamicNorm(), folder, "magnitudeY");
 
+        FourierImage deGradient = fourierPair.deGradientAprilWithCenter();
+        deGradient.shiftApril();
+        FourierImage fourierImage = deGradient.fftCooleyInverse();
         MagniImage idpcRe = fourierImage.getImageFromRe().dynamicNorm();
         saveMagniImageToFolder(idpcRe, folder, "idpc_RE");
         MagniImage idpcIm = fourierImage.getImageFromIm().dynamicNorm();
         saveMagniImageToFolder(idpcIm, folder, "idpc_ZIM");
-
-//        FourierImage fourierImage1 = new FourierImage(imageX).fftCooleyForward();
-//        fourierImage1.saveToFile(new File("out/" + folder + "/fft.txt"));
-//        fourierImage1.shift();
-//        fourierImage1.saveToFile(new File("out/" + folder + "/fft2.txt"));
-        saveMagniImageToFolder(new FourierImage(imageX).fftCooleyForward().fftCooleyInverse()
-                .getImageFromRe().dynamicNorm(), folder, "testImageX");
     }
 
     public static MagniImage[] getImagesFromVelox(String hdfFilePath, String[] detSeq) {
@@ -124,24 +113,11 @@ public class AprilNew {
     public static MagniImage[] getImagesFromPath(String folder, String[] detSeq) {
         String ext = ".png";
         return new MagniImage[]{
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[0] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[1] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[2] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[3] + ext)))
+                new MagniImage(loadImageFromIn(buildPath(folder, detSeq[0] + ext))),
+                new MagniImage(loadImageFromIn(buildPath(folder, detSeq[1] + ext))),
+                new MagniImage(loadImageFromIn(buildPath(folder, detSeq[2] + ext))),
+                new MagniImage(loadImageFromIn(buildPath(folder, detSeq[3] + ext)))
         };
     }
 
-    private static FourierImage calculateIdpc(MagniImage[] images) {
-        MagniImage imageX = images[0].subtract(images[2]);
-        MagniImage imageY = images[1].subtract(images[3]);
-        FourierPair fourierPair = new FourierPair(imageX, imageY);
-//        fourierPair.shift();
-        fourierPair.fftCooleyForward();
-//        fourierPair.shift();
-        FourierImage deGradient = fourierPair.deGradientApril();
-//        deGradient.shift();
-        deGradient = deGradient.fftCooleyInverse();
-//        deGradient.shift();
-        return deGradient;
-    }
 }

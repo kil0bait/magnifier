@@ -1,6 +1,4 @@
-package ru.kil0bait.magnifier.classes;
-
-import ru.kil0bait.magnifier.stats.MagniStats;
+package ru.kil0bait.magnifier.base;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -37,6 +35,7 @@ public class MagniImage {
     public MagniImage(MagniImage that) {
         this.width = that.width;
         this.height = that.height;
+        this.name = that.name;
         this.pixels = new MagniPixel[height][width];
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
@@ -49,23 +48,6 @@ public class MagniImage {
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
                 res.pixels[y][x] = this.pixels[y][x].subtractIntensity(that.pixels[y][x]);
-        return res;
-    }
-
-    public MagniImage sum(MagniImage that) {
-        checkImagesResolutions(this, that);
-        MagniImage res = new MagniImage(this);
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
-                res.pixels[y][x] = this.pixels[y][x].sumIntensity(that.pixels[y][x]);
-        return res;
-    }
-
-    public MagniImage mulByNumber(double n) {
-        MagniImage res = new MagniImage(this);
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
-                res.pixels[y][x] = this.pixels[y][x].mulByNumber(n);
         return res;
     }
 
@@ -152,58 +134,6 @@ public class MagniImage {
         return res;
     }
 
-    public MagniStats normAndStats() {
-        MagniPixel[][] norm = new MagniPixel[height][width];
-        int[] histo256 = new int[256];
-        double min, max;
-        min = max = pixels[0][0].getIntensity();
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++) {
-                double current = pixels[y][x].getIntensity();
-                min = Math.min(current, min);
-                max = Math.max(current, max);
-            }
-        double range = max - min;
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++) {
-                double current = pixels[y][x].getIntensity();
-                current = ((current - min) / range) * 255;
-                norm[y][x] = new MagniPixel(current);
-                histo256[(int) current]++;
-            }
-        return new MagniStats(new MagniImage(norm), histo256, min, max);
-    }
-
-    public MagniStats normAndStats(double lowCoefficient, double highCoefficient) {
-        MagniPixel[][] norm = new MagniPixel[height][width];
-        int[] histo256 = new int[256];
-        double min, max;
-        min = max = pixels[0][0].getIntensity();
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++) {
-                double current = pixels[y][x].getIntensity();
-                min = Math.min(current, min);
-                max = Math.max(current, max);
-            }
-        double range = max - min;
-        double newRange = range * (highCoefficient - lowCoefficient);
-        double newMin = min + range * lowCoefficient;
-        double newMax = newMin + newRange;
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++) {
-                double current = pixels[y][x].getIntensity();
-                if (current < newMin)
-                    current = 0;
-                else if (current > newMax)
-                    current = 255;
-                else
-                    current = ((current - newMin) / newRange) * 255;
-                norm[y][x] = new MagniPixel(current);
-                histo256[(int) current]++;
-            }
-        return new MagniStats(new MagniImage(norm), histo256, min, max);
-    }
-
     public int getWidth() {
         return width;
     }
@@ -220,12 +150,12 @@ public class MagniImage {
         this.name = name;
     }
 
-    protected static void checkImagesResolutions(MagniImage image1, MagniImage image2) {
+    public static void checkImagesResolutions(MagniImage image1, MagniImage image2) {
         if (image1.width != image2.width || image1.height != image2.height)
             throw new MagniException("Images resolutions do not equal");
     }
 
-    protected static void checkImageWidthEqualsHeight(MagniImage image) {
+    public static void checkImageWidthEqualsHeight(MagniImage image) {
         if (image.width != image.height)
             throw new MagniException("Image width not equals height");
     }
