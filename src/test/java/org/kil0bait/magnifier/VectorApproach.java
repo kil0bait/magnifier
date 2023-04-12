@@ -1,13 +1,13 @@
-package ru.kil0bait.magnifier;
+package org.kil0bait.magnifier;
 
 import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
 import io.jhdf.api.Node;
-import ru.kil0bait.magnifier.vector.ComplexVectorImage;
-import ru.kil0bait.magnifier.base.FourierImage;
-import ru.kil0bait.magnifier.base.MagniImage;
-import ru.kil0bait.magnifier.base.MagniPixel;
+import org.kil0bait.magnifier.base.FourierImage;
+import org.kil0bait.magnifier.base.MagniImage;
+import org.kil0bait.magnifier.base.MagniPixel;
+import org.kil0bait.magnifier.vector.ComplexVectorImage;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static ru.kil0bait.magnifier.TestUtils.*;
 
 public class VectorApproach {
     public static final Pattern VELOX_META_PATTERN = Pattern.compile("\"label\": \"([^\"]*)\".*\"dataPath\": \"([^\"]*)\"", Pattern.DOTALL);
@@ -37,8 +35,8 @@ public class VectorApproach {
     private static void idpc(MagniImage[] images, String folder) throws IOException {
         MagniImage imageX = images[0].subtract(images[2]);
         MagniImage imageY = images[1].subtract(images[3]);
-        saveMagniImageWithName(imageX.dynamicNorm(), folder, "imageX");
-        saveMagniImageWithName(imageY.dynamicNorm(), folder, "imageY");
+        TestUtils.saveMagniImageWithName(imageX.dynamicNorm(), folder, "imageX");
+        TestUtils.saveMagniImageWithName(imageY.dynamicNorm(), folder, "imageY");
 
         ComplexVectorImage function = new ComplexVectorImage(imageY, imageX);
         ComplexVectorImage fftForward = function.fftCooleyForward();
@@ -46,8 +44,8 @@ public class VectorApproach {
 //        fftForward.getImage2().saveToFile(new File("out/" + folder + "/fft_imageX_vector.txt"));
         MagniImage[] magnitudes = fftForward.spectrumFourier();
 
-        saveMagniImageWithName(magnitudes[0].dynamicNormAverage(), folder, "magnitude1");
-        saveMagniImageWithName(magnitudes[1].dynamicNormAverage(), folder, "magnitude2");
+        TestUtils.saveMagniImageWithName(magnitudes[0].dynamicNormAverage(), folder, "magnitude1");
+        TestUtils.saveMagniImageWithName(magnitudes[1].dynamicNormAverage(), folder, "magnitude2");
 
 //        FourierImage integrated = fftForward.integrated();
         FourierImage integrated = fftForward.integratedCombine();
@@ -57,13 +55,13 @@ public class VectorApproach {
 //                .dftSlowInverseWithCenter();
 
         MagniImage idpcRe = fourierImage.imageFromRe().dynamicNorm();
-        saveMagniImageWithName(idpcRe, folder, "idpc_RE");
+        TestUtils.saveMagniImageWithName(idpcRe, folder, "idpc_RE");
 //        MagniImage idpcIm = fourierImage.imageFromIm().dynamicNorm();
 //        saveMagniImageWithName(idpcIm, folder, "idpc_ZIM");
 
         FourierImage differentialCombine = fftForward.differentialCombine().fftCooleyInverse();
 
-        saveMagniImageWithName(differentialCombine.imageFromRe().dynamicNorm(), folder, "dDPC_RE");
+        TestUtils.saveMagniImageWithName(differentialCombine.imageFromRe().dynamicNorm(), folder, "dDPC_RE");
     }
 
 
@@ -72,10 +70,10 @@ public class VectorApproach {
             return;
         int[][] cycles = {{0, 1, 2, 3}, {0, 2, 1, 3}, {0, 1, 3, 2}};
         MagniImage[] images = new MagniImage[]{
-                new MagniImage(loadImageFromOut(buildPath(folder, names[0] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, names[1] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, names[2] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, names[3] + ext)))
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, names[0] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, names[1] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, names[2] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, names[3] + ext)))
         };
         for (int[] cycle : cycles) {
             String postfix = concatByOrder(names, cycle);
@@ -101,9 +99,9 @@ public class VectorApproach {
     }
 
     private static void singleAction(MagniImage[] images, String name, String folder) {
-        createFolderIn(buildPath(folder, name));
+        TestUtils.createFolderIn(TestUtils.buildPath(folder, name));
         MagniImage imageRe = calculateIdpc(images).imageFromRe().dynamicNorm();
-        saveMagniImageWithName(imageRe, folder, name);
+        TestUtils.saveMagniImageWithName(imageRe, folder, name);
     }
 
     private static String concatByOrder(String[] s, int[] order) {
@@ -143,7 +141,7 @@ public class VectorApproach {
 
     public static List<MagniImage> dpcImagesFromVelox(String hdfFilePath) {
         List<MagniImage> res = new ArrayList<>();
-        try (HdfFile in = new HdfFile(Paths.get(buildPath("in", hdfFilePath)))) {
+        try (HdfFile in = new HdfFile(Paths.get(TestUtils.buildPath("in", hdfFilePath)))) {
             Group detectorImages = (Group) in.getByPath("/Presentation/Displays/ImageDisplay");
             for (Map.Entry<String, Node> entry : detectorImages.getChildren().entrySet()) {
                 String[] data = (String[]) ((Dataset) entry.getValue()).getData();
@@ -184,10 +182,10 @@ public class VectorApproach {
     public static MagniImage[] getImagesFromPath(String folder, String[] detSeq) {
         String ext = ".png";
         return new MagniImage[]{
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[0] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[1] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[2] + ext))),
-                new MagniImage(loadImageFromOut(buildPath(folder, detSeq[3] + ext)))
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, detSeq[0] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, detSeq[1] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, detSeq[2] + ext))),
+                new MagniImage(TestUtils.loadImageFromOut(TestUtils.buildPath(folder, detSeq[3] + ext)))
         };
     }
 }

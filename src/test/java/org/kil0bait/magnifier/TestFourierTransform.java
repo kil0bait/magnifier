@@ -1,10 +1,10 @@
-package ru.kil0bait.magnifier;
+package org.kil0bait.magnifier;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import ru.kil0bait.magnifier.base.FourierImage;
-import ru.kil0bait.magnifier.base.MagniImage;
-import ru.kil0bait.magnifier.vector.ComplexVectorImage;
+import org.kil0bait.magnifier.base.FourierImage;
+import org.kil0bait.magnifier.base.MagniImage;
+import org.kil0bait.magnifier.vector.ComplexVectorImage;
 
 public class TestFourierTransform {
     static String folder = "aprilFourier";

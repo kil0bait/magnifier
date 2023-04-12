@@ -1,6 +1,6 @@
-package ru.kil0bait.magnifier.vector;
+package org.kil0bait.magnifier.vector;
 
-import ru.kil0bait.magnifier.base.ComplexNumber;
+import org.kil0bait.magnifier.base.ComplexNumber;
 
 public class ComplexVector {
     protected final ComplexNumber n1;

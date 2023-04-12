@@ -1,6 +1,6 @@
-package ru.kil0bait.magnifier.vector;
+package org.kil0bait.magnifier.vector;
 
-import ru.kil0bait.magnifier.base.*;
+import org.kil0bait.magnifier.base.*;
 
 public class ComplexVectorImage {
     private final ComplexVector[][] vectors;

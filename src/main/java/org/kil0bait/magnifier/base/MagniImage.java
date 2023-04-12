@@ -1,4 +1,4 @@
-package ru.kil0bait.magnifier.base;
+package org.kil0bait.magnifier.base;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -151,23 +151,23 @@ public class MagniImage {
 
     public String toStringRawValues() {
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("--Image resolution [%dx%d]--\r\n", height, width));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
                 builder.append(numberToString(pixels[y][x].getIntensity()));
-            builder.append("\r\n");
+            if (y != height - 1)
+                builder.append("\r\n");
         }
         return builder.toString();
     }
 
     public static MagniImage fromStringRawValues(String s) {
         String[] split = s.replaceAll("\r", "").split("\n");
-        String[] temp = split[0].substring(split[0].indexOf("[") + 1, split[0].indexOf("]")).split("x");
-        int height = Integer.parseInt(temp[0]);
-        int width = Integer.parseInt(temp[1]);
+        int height = split.length;
+        int width = split[0].trim().split(SPACES).length;
         MagniPixel[][] resPixels = new MagniPixel[height][width];
+        String[] temp;
         for (int y = 0; y < height; y++) {
-            temp = split[y + 1].split(SPACES);
+            temp = split[y].split(SPACES);
             for (int x = 0; x < width; x++)
                 resPixels[y][x] = new MagniPixel(Double.parseDouble(temp[x]));
         }

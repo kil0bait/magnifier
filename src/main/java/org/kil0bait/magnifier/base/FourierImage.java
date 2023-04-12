@@ -1,4 +1,4 @@
-package ru.kil0bait.magnifier.base;
+package org.kil0bait.magnifier.base;
 
 public class FourierImage {
     private final ComplexNumber[][] pixels;
