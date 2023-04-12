@@ -63,23 +63,16 @@ public class FourierImage {
 
     public FourierImage fftCooleyInverse() {
         MagniException.validateResolutionIsPowerOfTwo(height, width);
-        ComplexNumber[][] res = fftCooleyInverseRecursion(height, 1, 0, 0);
+        ComplexNumber[][] shifted = new ComplexNumber[height][width];
+        int center = height / 2;
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                shifted[y][x] = pixels[(y - center + height) % height][(x - center + width) % width];
+        ComplexNumber[][] res = new FourierImage(shifted).fftCooleyInverseRecursion(height, 1, 0, 0);
         int sqrN = height * height;
         for (int y = 0; y < height; y++)
             for (int x = 0; x < height; x++)
                 res[y][x].divByNumberHere(sqrN);
-        return new FourierImage(res);
-    }
-
-    public FourierImage shiftApril() {
-        ComplexNumber[][] res = new ComplexNumber[height][width];
-        int centerY = height / 2;
-        int centerX = width / 2;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                res[y][x] = pixels[(y - centerY + height) % height][(x - centerX + width) % width];
-            }
-        }
         return new FourierImage(res);
     }
 

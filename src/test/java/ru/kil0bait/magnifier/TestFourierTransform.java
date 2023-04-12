@@ -32,7 +32,7 @@ public class TestFourierTransform {
         ComplexVectorImage cvImage = new ComplexVectorImage(image1, image2);
         ComplexVectorImage dftSlowForward = cvImage.dftSlowForward();
         TestUtils.saveMagniImageWithName(dftSlowForward.spectrumFourier()[0].dynamicNormAverage(), folder, "spectrum_im1");
-        FourierImage deGradient = cvImage.deGradient();
+        FourierImage deGradient = cvImage.integratedCombine();
         FourierImage res = deGradient.dftSlowInverse();
         TestUtils.saveMagniImageWithName(res.imageFromRe().dynamicNorm(), folder, "after2");
     }

@@ -103,7 +103,7 @@ public class ComplexVectorImage {
         return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
-    public FourierImage deGradient() {
+    public FourierImage integratedCombine() {
         int centerY = height / 2;
         int centerX = width / 2;
         ComplexNumber[][] res = new ComplexNumber[height][width];
@@ -119,6 +119,26 @@ public class ComplexVectorImage {
                 res[y][x] = vectors[y][x].scalarMul(new ComplexVector(ky, kx))
                         .div(twoPiImUnit)
                         .divByNumber(ky * ky + kx * kx);
+            }
+        }
+        return new FourierImage(res);
+    }
+
+    public FourierImage differentialCombine() {
+        int centerY = height / 2;
+        int centerX = width / 2;
+        ComplexNumber[][] res = new ComplexNumber[height][width];
+        ComplexNumber twoPiImUnit = new ComplexNumber(0, 2 * Math.PI);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double ky = centerY - y;
+                double kx = x - centerX;
+                if (ky == 0 && kx == 0) {
+                    res[y][x] = new ComplexNumber(0, 0);
+                    continue;
+                }
+                res[y][x] = vectors[y][x].scalarMul(new ComplexVector(ky, kx))
+                        .mul(twoPiImUnit);
             }
         }
         return new FourierImage(res);

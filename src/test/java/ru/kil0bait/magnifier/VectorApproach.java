@@ -22,13 +22,15 @@ import static ru.kil0bait.magnifier.TestUtils.*;
 public class VectorApproach {
     public static final Pattern VELOX_META_PATTERN = Pattern.compile("\"label\": \"([^\"]*)\".*\"dataPath\": \"([^\"]*)\"", Pattern.DOTALL);
     public static final String[] DET_SEQ = {"DF4-A", "DF4-B", "DF4-C", "DF4-D"};
-    public static final String[] DET_SEQ2 = {"DF4-A", "DF4-D", "DF4-C", "DF4-B"};
+    public static final String[] VELOX_SEQ = {"DF4-A", "DF4-D", "DF4-C", "DF4-B"};
+    public static final String[] BOOK_SEQ = {"DF4-D", "DF4-C", "DF4-B", "DF4-A"};
 
     public static void main(String[] args) throws IOException {
-        String folder = "aprilStage";
-//        MagniImage[] images = getImagesFromPath(folder, DET_SEQ2);
-        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ);
+        String folder = "aprilBor";
+        MagniImage[] images = getImagesFromPath(folder, DET_SEQ);
+//        MagniImage[] images = getImagesFromVelox(folder + "/in.emd", DET_SEQ);
         idpc(images, folder);
+//        combinations(folder, DET_SEQ, ".png");
     }
 
 
@@ -44,21 +46,86 @@ public class VectorApproach {
 //        fftForward.getImage2().saveToFile(new File("out/" + folder + "/fft_imageX_vector.txt"));
         MagniImage[] magnitudes = fftForward.spectrumFourier();
 
-        saveMagniImageWithName(magnitudes[0].dynamicNorm(), folder, "magnitude1");
-        saveMagniImageWithName(magnitudes[1].dynamicNorm(), folder, "magnitude2");
+        saveMagniImageWithName(magnitudes[0].dynamicNormAverage(), folder, "magnitude1");
+        saveMagniImageWithName(magnitudes[1].dynamicNormAverage(), folder, "magnitude2");
 
-//        FourierImage deGradient = fftForward.deGradient();
-        FourierImage deGradient = fftForward.deGradient();
-//        deGradient.shift();
-        FourierImage fourierImage = deGradient
-                .shiftApril()
+//        FourierImage integrated = fftForward.integrated();
+        FourierImage integrated = fftForward.integratedCombine();
+//        integrated.shift();
+        FourierImage fourierImage = integrated
                 .fftCooleyInverse();
 //                .dftSlowInverseWithCenter();
 
         MagniImage idpcRe = fourierImage.imageFromRe().dynamicNorm();
         saveMagniImageWithName(idpcRe, folder, "idpc_RE");
-        MagniImage idpcIm = fourierImage.imageFromIm().dynamicNorm();
-        saveMagniImageWithName(idpcIm, folder, "idpc_ZIM");
+//        MagniImage idpcIm = fourierImage.imageFromIm().dynamicNorm();
+//        saveMagniImageWithName(idpcIm, folder, "idpc_ZIM");
+
+        FourierImage differentialCombine = fftForward.differentialCombine().fftCooleyInverse();
+
+        saveMagniImageWithName(differentialCombine.imageFromRe().dynamicNorm(), folder, "dDPC_RE");
+    }
+
+
+    private static void combinations(String folder, String[] names, String ext) {
+        if (names.length != 4)
+            return;
+        int[][] cycles = {{0, 1, 2, 3}, {0, 2, 1, 3}, {0, 1, 3, 2}};
+        MagniImage[] images = new MagniImage[]{
+                new MagniImage(loadImageFromOut(buildPath(folder, names[0] + ext))),
+                new MagniImage(loadImageFromOut(buildPath(folder, names[1] + ext))),
+                new MagniImage(loadImageFromOut(buildPath(folder, names[2] + ext))),
+                new MagniImage(loadImageFromOut(buildPath(folder, names[3] + ext)))
+        };
+        for (int[] cycle : cycles) {
+            String postfix = concatByOrder(names, cycle);
+            cycleAction(cycle, images, names, postfix, folder);
+            cycleAction(reversed(cycle), images, names, postfix + "_reverse", folder);
+        }
+    }
+
+    private static void cycleAction(int[] cycle, MagniImage[] images, String[] names, String postfix, String folder) {
+        int mod = cycle.length;
+        for (int i = 0; i < cycle.length; i++) {
+            MagniImage[] ordered = new MagniImage[mod];
+            StringBuilder name = new StringBuilder();
+            for (int j = 0; j < cycle.length; j++) {
+                ordered[j] = images[cycle[(i + j) % mod]];
+                name.append(names[cycle[(i + j) % mod]]);
+            }
+            name.append("__").append(postfix);
+            if (i != 0)
+                name.append("_cycle");
+            singleAction(ordered, name.toString(), folder);
+        }
+    }
+
+    private static void singleAction(MagniImage[] images, String name, String folder) {
+        createFolderIn(buildPath(folder, name));
+        MagniImage imageRe = calculateIdpc(images).imageFromRe().dynamicNorm();
+        saveMagniImageWithName(imageRe, folder, name);
+    }
+
+    private static String concatByOrder(String[] s, int[] order) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < order.length; i++)
+            sb.append(s[order[i]]);
+        return sb.toString();
+    }
+
+    private static int[] reversed(int[] array) {
+        int length = array.length;
+        int[] res = new int[length];
+        for (int i = 0; i < length; i++)
+            res[i] = array[length - 1 - i];
+        return res;
+    }
+
+    private static FourierImage calculateIdpc(MagniImage[] images) {
+        MagniImage imageX = images[0].subtract(images[2]);
+        MagniImage imageY = images[1].subtract(images[3]);
+        FourierImage integratedCombine = new ComplexVectorImage(imageY, imageX).fftCooleyForward().integratedCombine();
+        return integratedCombine.fftCooleyInverse();
     }
 
     public static MagniImage[] getImagesFromVelox(String hdfFilePath, String[] detSeq) {
