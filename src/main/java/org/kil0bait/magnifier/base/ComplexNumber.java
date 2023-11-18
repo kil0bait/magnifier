@@ -116,7 +116,7 @@ public class ComplexNumber {
         } else {
             s = s.replaceFirst("-i", "-1i")
                     .replaceFirst("\\+i", "+1i")
-                    .replaceAll("-", "+-");
+                    .replace("-", "+-");
             if (s.charAt(0) == '+')
                 s = s.replaceFirst("\\+", "");
             if (!s.contains("+"))

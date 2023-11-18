@@ -53,42 +53,42 @@ public class ComplexVectorImage {
         return new ComplexVectorImage(res);
     }
 
-    public ComplexVector[][] fftCooleyForwardRecursion(int N, int delta, int shift1, int shift2) {
-        if (N == 1) {
+    public ComplexVector[][] fftCooleyForwardRecursion(int n, int delta, int shift1, int shift2) {
+        if (n == 1) {
             return new ComplexVector[][]{{vectors[shift1][shift2]}};
         } else {
-            int M = N / 2;
+            int m = n / 2;
             ComplexVector[][] s00 =
-                    fftCooleyForwardRecursion(M, 2 * delta, shift1, shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, shift1, shift2);
             ComplexVector[][] s01 =
-                    fftCooleyForwardRecursion(M, 2 * delta, shift1, delta + shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, shift1, delta + shift2);
             ComplexVector[][] s10 =
-                    fftCooleyForwardRecursion(M, 2 * delta, delta + shift1, shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, delta + shift1, shift2);
             ComplexVector[][] s11 =
-                    fftCooleyForwardRecursion(M, 2 * delta, delta + shift1, delta + shift2);
-            ComplexVector[][] res = new ComplexVector[N][N];
-            for (int k1 = 0; k1 < M; k1++)
-                for (int k2 = 0; k2 < M; k2++) {
+                    fftCooleyForwardRecursion(m, 2 * delta, delta + shift1, delta + shift2);
+            ComplexVector[][] res = new ComplexVector[n][n];
+            for (int k1 = 0; k1 < m; k1++)
+                for (int k2 = 0; k2 < m; k2++) {
                     ComplexVector s00MulOmega = s00[k1][k2];
-                    ComplexVector s01MulOmega = s01[k1][k2].mul(omegaForward(N, k2));
-                    ComplexVector s10MulOmega = s10[k1][k2].mul(omegaForward(N, k1));
-                    ComplexVector s11MulOmega = s11[k1][k2].mul(omegaForward(N, k1 + k2));
+                    ComplexVector s01MulOmega = s01[k1][k2].mul(omegaForward(n, k2));
+                    ComplexVector s10MulOmega = s10[k1][k2].mul(omegaForward(n, k1));
+                    ComplexVector s11MulOmega = s11[k1][k2].mul(omegaForward(n, k1 + k2));
                     res[k1][k2] = ComplexVector.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .sumHere(s11MulOmega);
-                    res[k1][k2 + M] = ComplexVector.zero()
+                    res[k1][k2 + m] = ComplexVector.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2] = ComplexVector.zero()
+                    res[k1 + m][k2] = ComplexVector.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .subHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2 + M] = ComplexVector.zero()
+                    res[k1 + m][k2 + m] = ComplexVector.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .subHere(s10MulOmega)
@@ -98,8 +98,8 @@ public class ComplexVectorImage {
         }
     }
 
-    public static ComplexNumber omegaForward(int N, int pow) {
-        double x = -2 * Math.PI * pow / N;
+    public static ComplexNumber omegaForward(int n, int pow) {
+        double x = -2 * Math.PI * pow / n;
         return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
@@ -110,8 +110,8 @@ public class ComplexVectorImage {
         ComplexNumber twoPiImUnit = new ComplexNumber(0, 2 * Math.PI);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                double ky = centerY - y;
-                double kx = x - centerX;
+                double ky = (double) centerY - y;
+                double kx = (double) x - centerX;
                 if (ky == 0 && kx == 0) {
                     res[y][x] = new ComplexNumber(0, 0);
                     continue;
@@ -131,8 +131,8 @@ public class ComplexVectorImage {
         ComplexNumber twoPiImUnit = new ComplexNumber(0, 2 * Math.PI);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                double ky = centerY - y;
-                double kx = x - centerX;
+                double ky = (double) centerY - y;
+                double kx = (double) x - centerX;
                 if (ky == 0 && kx == 0) {
                     res[y][x] = new ComplexNumber(0, 0);
                     continue;

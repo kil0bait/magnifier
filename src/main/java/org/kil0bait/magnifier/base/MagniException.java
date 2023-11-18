@@ -21,7 +21,7 @@ public class MagniException extends RuntimeException {
             throw new MagniException("Bad resolution: images have different resolution");
     }
 
-    private static boolean isPowerOfTwo(int N) {
-        return N != 0 && ((N & (N - 1)) == 0);
+    private static boolean isPowerOfTwo(int n) {
+        return n != 0 && ((n & (n - 1)) == 0);
     }
 }

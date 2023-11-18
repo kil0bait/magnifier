@@ -63,14 +63,15 @@ public class MagniImage {
 
     public MagniImage dynamicNorm() {
         MagniPixel[][] res = new MagniPixel[height][width];
-        double min = 0, max = 0;
+        double min = 0;
+        double max = 0;
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++) {
                 min = Math.min(pixels[y][x].getIntensity(), min);
                 max = Math.max(pixels[y][x].getIntensity(), max);
             }
-        System.out.println("Min = " + min + "; Max = " + max);
         max -= min;
+        max = max == 0 ? 1 : max;
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++) {
                 double t = pixels[y][x].getIntensity();
@@ -82,7 +83,8 @@ public class MagniImage {
 
     public MagniImage dynamicNormAverage() {
         MagniPixel[][] res = new MagniPixel[height][width];
-        double min = 0, max = 0;
+        double min = 0;
+        double max = 0;
         double average = 0;
         double temp;
         for (int y = 0; y < height; y++)
@@ -92,7 +94,6 @@ public class MagniImage {
                 max = Math.max(temp, max);
                 average += temp;
             }
-        System.out.println(min + " " + max);
         average /= (width * height);
         max = 2 * (average - min);
         double threshold = max - min;
@@ -161,7 +162,7 @@ public class MagniImage {
     }
 
     public static MagniImage fromStringRawValues(String s) {
-        String[] split = s.replaceAll("\r", "").split("\n");
+        String[] split = s.replace("\r", "").split("\n");
         int height = split.length;
         int width = split[0].trim().split(SPACES).length;
         MagniPixel[][] resPixels = new MagniPixel[height][width];
@@ -176,6 +177,6 @@ public class MagniImage {
 
     public static String numberToString(double n) {
         String res = String.format(Locale.US, NUMBER_FORMAT, n);
-        return res + (" ".repeat(CELL_WIDTH - res.length()));
+        return res + (new String(new char[CELL_WIDTH - res.length()]).replace("\0", " "));
     }
 }

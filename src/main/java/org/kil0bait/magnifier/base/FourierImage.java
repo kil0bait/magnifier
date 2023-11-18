@@ -50,7 +50,7 @@ public class FourierImage {
                         temp.sumHere(omegaInverse(height, (centerY - k1) * (centerY - n1))
                                 .mul(omegaInverse(width, (k2 - centerX) * (n2 - centerX)))
                                 .mul(pixels[n1][n2]));
-                res[k1][k2] = temp.divByNumberHere(height * width);
+                res[k1][k2] = temp.divByNumberHere((double) height * width);
             }
         }
         return new FourierImage(res);
@@ -58,7 +58,13 @@ public class FourierImage {
 
     public FourierImage fftCooleyForward() {
         MagniException.validateResolutionIsPowerOfTwo(height, width);
-        return new FourierImage(fftCooleyForwardRecursion(height, 1, 0, 0));
+        ComplexNumber[][] raw = fftCooleyForwardRecursion(height, 1, 0, 0);
+        ComplexNumber[][] res = new ComplexNumber[height][width];
+        int center = height / 2;
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                res[y][x] = raw[(y - center + height) % height][(x - center + width) % width];
+        return new FourierImage(res);
     }
 
     public FourierImage fftCooleyInverse() {
@@ -76,42 +82,42 @@ public class FourierImage {
         return new FourierImage(res);
     }
 
-    public ComplexNumber[][] fftCooleyForwardRecursion(int N, int delta, int shift1, int shift2) {
-        if (N == 1) {
+    public ComplexNumber[][] fftCooleyForwardRecursion(int n, int delta, int shift1, int shift2) {
+        if (n == 1) {
             return new ComplexNumber[][]{{pixels[shift1][shift2]}};
         } else {
-            int M = N / 2;
+            int m = n / 2;
             ComplexNumber[][] s00 =
-                    fftCooleyForwardRecursion(M, 2 * delta, shift1, shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, shift1, shift2);
             ComplexNumber[][] s01 =
-                    fftCooleyForwardRecursion(M, 2 * delta, shift1, delta + shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, shift1, delta + shift2);
             ComplexNumber[][] s10 =
-                    fftCooleyForwardRecursion(M, 2 * delta, delta + shift1, shift2);
+                    fftCooleyForwardRecursion(m, 2 * delta, delta + shift1, shift2);
             ComplexNumber[][] s11 =
-                    fftCooleyForwardRecursion(M, 2 * delta, delta + shift1, delta + shift2);
-            ComplexNumber[][] res = new ComplexNumber[N][N];
-            for (int k1 = 0; k1 < M; k1++)
-                for (int k2 = 0; k2 < M; k2++) {
+                    fftCooleyForwardRecursion(m, 2 * delta, delta + shift1, delta + shift2);
+            ComplexNumber[][] res = new ComplexNumber[n][n];
+            for (int k1 = 0; k1 < m; k1++)
+                for (int k2 = 0; k2 < m; k2++) {
                     ComplexNumber s00MulOmega = s00[k1][k2];
-                    ComplexNumber s01MulOmega = s01[k1][k2].mul(omegaForward(N, k2));
-                    ComplexNumber s10MulOmega = s10[k1][k2].mul(omegaForward(N, k1));
-                    ComplexNumber s11MulOmega = s11[k1][k2].mul(omegaForward(N, k1 + k2));
+                    ComplexNumber s01MulOmega = s01[k1][k2].mul(omegaForward(n, k2));
+                    ComplexNumber s10MulOmega = s10[k1][k2].mul(omegaForward(n, k1));
+                    ComplexNumber s11MulOmega = s11[k1][k2].mul(omegaForward(n, k1 + k2));
                     res[k1][k2] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .sumHere(s11MulOmega);
-                    res[k1][k2 + M] = ComplexNumber.zero()
+                    res[k1][k2 + m] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2] = ComplexNumber.zero()
+                    res[k1 + m][k2] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .subHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2 + M] = ComplexNumber.zero()
+                    res[k1 + m][k2 + m] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .subHere(s10MulOmega)
@@ -121,42 +127,42 @@ public class FourierImage {
         }
     }
 
-    public ComplexNumber[][] fftCooleyInverseRecursion(int N, int delta, int shift1, int shift2) {
-        if (N == 1) {
+    public ComplexNumber[][] fftCooleyInverseRecursion(int n, int delta, int shift1, int shift2) {
+        if (n == 1) {
             return new ComplexNumber[][]{{pixels[shift1][shift2]}};
         } else {
-            int M = N / 2;
+            int m = n / 2;
             ComplexNumber[][] s00 =
-                    fftCooleyInverseRecursion(M, 2 * delta, shift1, shift2);
+                    fftCooleyInverseRecursion(m, 2 * delta, shift1, shift2);
             ComplexNumber[][] s01 =
-                    fftCooleyInverseRecursion(M, 2 * delta, shift1, delta + shift2);
+                    fftCooleyInverseRecursion(m, 2 * delta, shift1, delta + shift2);
             ComplexNumber[][] s10 =
-                    fftCooleyInverseRecursion(M, 2 * delta, delta + shift1, shift2);
+                    fftCooleyInverseRecursion(m, 2 * delta, delta + shift1, shift2);
             ComplexNumber[][] s11 =
-                    fftCooleyInverseRecursion(M, 2 * delta, delta + shift1, delta + shift2);
-            ComplexNumber[][] res = new ComplexNumber[N][N];
-            for (int k1 = 0; k1 < M; k1++)
-                for (int k2 = 0; k2 < M; k2++) {
+                    fftCooleyInverseRecursion(m, 2 * delta, delta + shift1, delta + shift2);
+            ComplexNumber[][] res = new ComplexNumber[n][n];
+            for (int k1 = 0; k1 < m; k1++)
+                for (int k2 = 0; k2 < m; k2++) {
                     ComplexNumber s00MulOmega = s00[k1][k2];
-                    ComplexNumber s01MulOmega = s01[k1][k2].mul(omegaInverse(N, k2));
-                    ComplexNumber s10MulOmega = s10[k1][k2].mul(omegaInverse(N, k1));
-                    ComplexNumber s11MulOmega = s11[k1][k2].mul(omegaInverse(N, k1 + k2));
+                    ComplexNumber s01MulOmega = s01[k1][k2].mul(omegaInverse(n, k2));
+                    ComplexNumber s10MulOmega = s10[k1][k2].mul(omegaInverse(n, k1));
+                    ComplexNumber s11MulOmega = s11[k1][k2].mul(omegaInverse(n, k1 + k2));
                     res[k1][k2] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .sumHere(s11MulOmega);
-                    res[k1][k2 + M] = ComplexNumber.zero()
+                    res[k1][k2 + m] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .sumHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2] = ComplexNumber.zero()
+                    res[k1 + m][k2] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .sumHere(s01MulOmega)
                             .subHere(s10MulOmega)
                             .subHere(s11MulOmega);
-                    res[k1 + M][k2 + M] = ComplexNumber.zero()
+                    res[k1 + m][k2 + m] = ComplexNumber.zero()
                             .sumHere(s00MulOmega)
                             .subHere(s01MulOmega)
                             .subHere(s10MulOmega)
@@ -190,19 +196,19 @@ public class FourierImage {
         return new MagniImage(res);
     }
 
-    private static ComplexNumber omegaForward(int N, int pow) {
-        double x = -2 * Math.PI * pow / N;
+    private static ComplexNumber omegaForward(int n, int pow) {
+        double x = -2 * Math.PI * pow / n;
         return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
-    private static ComplexNumber omegaInverse(int N, int pow) {
-        double x = 2 * Math.PI * pow / N;
+    private static ComplexNumber omegaInverse(int n, int pow) {
+        double x = 2 * Math.PI * pow / n;
         return new ComplexNumber(Math.cos(x), Math.sin(x));
     }
 
     public String toStringRawValues() {
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("--Image resolution [%dx%d]--\r\n", height, width));
+        builder.append(String.format("--Image resolution [%dx%d]--\r%n", height, width));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
                 builder.append(complexToString(pixels[y][x]));
@@ -212,7 +218,7 @@ public class FourierImage {
     }
 
     public static FourierImage fromStringRawValues(String s) {
-        String[] split = s.replaceAll("\r", "").split("\n");
+        String[] split = s.replace("\r", "").split("\n");
         String[] temp = split[0].substring(split[0].indexOf("[") + 1, split[0].indexOf("]")).split("x");
         int height = Integer.parseInt(temp[0]);
         int width = Integer.parseInt(temp[1]);
@@ -230,6 +236,6 @@ public class FourierImage {
 
     public static String complexToString(ComplexNumber g) {
         String res = g.toString();
-        return res + (" ".repeat(CELL_WIDTH - res.length()));
+        return res + (new String(new char[CELL_WIDTH - res.length()]).replace("\0", " "));
     }
 }
