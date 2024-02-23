@@ -40,12 +40,29 @@ public class MagniImage {
                 this.pixels[y][x] = new MagniPixel(that.pixels[y][x]);
     }
 
+    public MagniImage sum(MagniImage that) {
+        checkImagesResolutions(this, that);
+        MagniImage res = new MagniImage(this);
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                res.pixels[y][x] = this.pixels[y][x].sumIntensity(that.pixels[y][x]);
+        return res;
+    }
+
     public MagniImage subtract(MagniImage that) {
         checkImagesResolutions(this, that);
         MagniImage res = new MagniImage(this);
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
                 res.pixels[y][x] = this.pixels[y][x].subtractIntensity(that.pixels[y][x]);
+        return res;
+    }
+
+    public MagniImage mulByConstant(double multiplier) {
+        MagniImage res = new MagniImage(this);
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                res.pixels[y][x] = this.pixels[y][x].mulByConstant(multiplier);
         return res;
     }
 
@@ -63,8 +80,8 @@ public class MagniImage {
 
     public MagniImage dynamicNorm() {
         MagniPixel[][] res = new MagniPixel[height][width];
-        double min = 0;
-        double max = 0;
+        double min = pixels[0][0].getIntensity();
+        double max = pixels[0][0].getIntensity();
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++) {
                 min = Math.min(pixels[y][x].getIntensity(), min);

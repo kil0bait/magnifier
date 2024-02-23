@@ -13,8 +13,16 @@ public class MagniPixel {
         this.intensity = that.intensity;
     }
 
+    public MagniPixel sumIntensity(MagniPixel that) {
+        return new MagniPixel(this.intensity + that.intensity);
+    }
+
     public MagniPixel subtractIntensity(MagniPixel that) {
         return new MagniPixel(this.intensity - that.intensity);
+    }
+
+    public MagniPixel mulByConstant(double multiplier) {
+        return new MagniPixel(this.intensity * multiplier);
     }
 
     public static MagniPixel fromRGBColor(int rgbColor) {
